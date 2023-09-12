@@ -1,18 +1,19 @@
 // 
 // Project for Stag Robotics
-// Purpose - use bluetooth gamepad controller to drive launcher robot
+// Purpose - use Bluetooth gamepad controller to drive launcher robot
 //
 // Using libraries - Bluepad32, and Servo
 //
-// Code significantly influenced by exampes for Bluepad32 - https://gitlab.com/ricardoquesada/bluepad32
+// Code significantly influenced by examples for Bluepad32 - https://gitlab.com/ricardoquesada/bluepad32
 //
 // https://gitlab.com/ricardoquesada/bluepad32/-/blob/main/docs/plat_nina.md
-// Above link shows how to load the proper firmware onto the arduino/nina boards
+//The Above link shows how to load the proper firmware onto the arduino/nina boards
 //
 
 #include <Bluepad32.h>
 #include <Servo.h>
 
+int RELAY_PIN = 4;
 Servo rightServo;
 Servo leftServo;
 ControllerPtr myControllers[BP32_MAX_CONTROLLERS];
@@ -21,12 +22,14 @@ ControllerPtr myControllers[BP32_MAX_CONTROLLERS];
 void setup() {
   // Initialize serial
   Serial.begin(9600);
-  while (!Serial) {
-    // wait for serial port to connect.
-    // You don't have to do this in your game. This is only for debugging
-    // purposes, so that you can see the output in the serial console.
-    ;
-  }
+  // while (!Serial) {
+  //   // wait for serial port to connect.
+  //   // You don't have to do this in your game. This is only for debugging
+  //   // purposes, so that you can see the output in the serial console.
+  //   ;
+  // }
+  
+  pinMode(RELAY_PIN, OUTPUT);
 
   String fv = BP32.firmwareVersion();
   Serial.print("Firmware version installed: ");
@@ -53,12 +56,12 @@ void setup() {
   // But might also fix some connection / re-connection issues.
   BP32.forgetBluetoothKeys();
 
-  // open PWM connection to motor controllers
+  // Open PWM connection to motor controllers
   rightServo.attach(1);
   leftServo.attach(2);
-  // set the controllers to idle (90)
-  rightServo.write(90);
-  leftServo.write(90);
+  // Set the controllers to idle (90)
+  rightServo.write(91);
+  leftServo.write(91);
 }
 
 // This callback gets called any time a new gamepad is connected.
@@ -88,7 +91,7 @@ void onConnectedController(ControllerPtr ctl) {
   }
   if (!foundEmptySlot) {
     Serial.println(
-        "CALLBACK: Controller connected, but could not found empty slot");
+        "CALLBACK: Controller connected, but could not find empty slot");
   }
 }
 
@@ -116,41 +119,52 @@ void onDisconnectedController(ControllerPtr ctl) {
 
 void processGamepad(ControllerPtr gamepad) {
   // There are different ways to query whether a button is pressed.
-  // By query each button individually:
+  // By querying each button individually:
   //  a(), b(), x(), y(), l1(), etc...
 
   if (gamepad->a()) {
-    //
+      digitalWrite(RELAY_PIN, HIGH);
+      delay(4000);
+      digitalWrite(RELAY_PIN, LOW);
   }
  
-  // set motor speeds - algorithm from - https://xiaoxiae.github.io/Robotics-Simplified-Website/drivetrain-control/arcade-drive/
+  // set motor speeds - an algorithm from - https://xiaoxiae.github.io/Robotics-Simplified-Website/drivetrain-control/arcade-drive/
   int32_t drive = -gamepad->axisY();  // gamepad returns -512 for this axis when pushed fully up
   int32_t rotate = gamepad->axisX();
+  if (rotate > 0 && rotate < 50) rotate = 0;
+  if (rotate < 0 && rotate > -50) rotate = 0;
+  rotate = rotate/2;
   int32_t maximum = max(abs(drive), abs(rotate));
   int32_t total = drive + rotate;
   int32_t difference = drive - rotate;
   int32_t right, left;
-  // set speed according to the quadrant that the values are in
-  if (drive >= 0) { // forward
-    if (rotate >= 0) { //  # I quadrant
-        left = maximum;
-        right = difference; 
-    } else {          //   # II quadrant
-        left = total;
-        right = maximum;
-    }
-  } else { // backward
-    if (rotate >= 0) { // # IV quadrant
-        left = total;
-        right = -maximum;
-    } else { // # III quadrant
-        left = -maximum;
-        right = difference;
-    }
-  }
 
-  right = map(right, -512, 512, 0, 180);
-  left = map(left, -512, 512, 0, 180);
+  // if (drive != 0 && rotate != 0) {
+    // set speed according to the quadrant that the values are in
+    if (drive >= 0) { // forward
+      if (rotate >= 0) { //  # I quadrant
+          left = maximum;
+          right = difference; 
+      } else {          //   # II quadrant
+          left = total;
+          right = maximum;
+      }
+    } else { // backward
+      if (rotate >= 0) { // # IV quadrant
+          left = total;
+          right = -maximum;
+      } else { // # III quadrant
+          left = -maximum;
+          right = difference;
+      }
+    }
+
+    right = map(right, -512, 512, 0, 180);
+    left = map(left, -512, 512, 0, 180);
+  // } else {
+  //   right = 91;
+  //   left = 91;
+  // }
 
   // old algorithm
   // right = map(drive + rotate, -720, 720, 0, 180);
