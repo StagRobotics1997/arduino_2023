@@ -1,13 +1,13 @@
 // 
 // Project for Stag Robotics
-// Purpose - use Bluetooth gamepad controller to drive launcher robot
+// Purpose - use bluetooth gamepad controller to drive launcher robot
 //
 // Using libraries - Bluepad32, and Servo
 //
-// Code significantly influenced by examples for Bluepad32 - https://gitlab.com/ricardoquesada/bluepad32
+// Code significantly influenced by exampes for Bluepad32 - https://gitlab.com/ricardoquesada/bluepad32
 //
 // https://gitlab.com/ricardoquesada/bluepad32/-/blob/main/docs/plat_nina.md
-//The Above link shows how to load the proper firmware onto the arduino/nina boards
+// Above link shows how to load the proper firmware onto the arduino/nina boards
 //
 
 #include <Bluepad32.h>
@@ -17,6 +17,8 @@ int RELAY_PIN = 4;
 Servo rightServo;
 Servo leftServo;
 ControllerPtr myControllers[BP32_MAX_CONTROLLERS];
+uint8_t old_right = 90;
+uint8_t old_left = 90;
 
 // Arduino setup function. Runs in CPU 1
 void setup() {
@@ -56,10 +58,10 @@ void setup() {
   // But might also fix some connection / re-connection issues.
   BP32.forgetBluetoothKeys();
 
-  // Open PWM connection to motor controllers
+  // open PWM connection to motor controllers
   rightServo.attach(1);
   leftServo.attach(2);
-  // Set the controllers to idle (90)
+  // set the controllers to idle (90)
   rightServo.write(91);
   leftServo.write(91);
 }
@@ -91,7 +93,7 @@ void onConnectedController(ControllerPtr ctl) {
   }
   if (!foundEmptySlot) {
     Serial.println(
-        "CALLBACK: Controller connected, but could not find empty slot");
+        "CALLBACK: Controller connected, but could not found empty slot");
   }
 }
 
@@ -119,7 +121,7 @@ void onDisconnectedController(ControllerPtr ctl) {
 
 void processGamepad(ControllerPtr gamepad) {
   // There are different ways to query whether a button is pressed.
-  // By querying each button individually:
+  // By query each button individually:
   //  a(), b(), x(), y(), l1(), etc...
 
   if (gamepad->a()) {
@@ -128,7 +130,7 @@ void processGamepad(ControllerPtr gamepad) {
       digitalWrite(RELAY_PIN, LOW);
   }
  
-  // set motor speeds - an algorithm from - https://xiaoxiae.github.io/Robotics-Simplified-Website/drivetrain-control/arcade-drive/
+  // set motor speeds - algorithm from - https://xiaoxiae.github.io/Robotics-Simplified-Website/drivetrain-control/arcade-drive/
   int32_t drive = -gamepad->axisY();  // gamepad returns -512 for this axis when pushed fully up
   int32_t rotate = gamepad->axisX();
   if (rotate > 0 && rotate < 50) rotate = 0;
@@ -139,39 +141,39 @@ void processGamepad(ControllerPtr gamepad) {
   int32_t difference = drive - rotate;
   int32_t right, left;
 
-  // if (drive != 0 && rotate != 0) {
-    // set speed according to the quadrant that the values are in
-    if (drive >= 0) { // forward
-      if (rotate >= 0) { //  # I quadrant
-          left = maximum;
-          right = difference; 
-      } else {          //   # II quadrant
-          left = total;
-          right = maximum;
-      }
-    } else { // backward
-      if (rotate >= 0) { // # IV quadrant
-          left = total;
-          right = -maximum;
-      } else { // # III quadrant
-          left = -maximum;
-          right = difference;
-      }
+  // set speed according to the quadrant that the values are in
+  if (drive >= 0) { // forward
+    if (rotate >= 0) { // # I quadrant
+        left = maximum;
+        right = difference; 
+    } else { //  # II quadrant
+        left = total;
+        right = maximum;
     }
+  } else { // backward
+    if (rotate >= 0) { // # IV quadrant
+        left = total;
+        right = -maximum;
+    } else { // # III quadrant
+        left = -maximum;
+        right = difference;
+    }
+  }
 
-    right = map(right, -512, 512, 0, 180);
-    left = map(left, -512, 512, 0, 180);
-  // } else {
-  //   right = 91;
-  //   left = 91;
-  // }
+  right = map(right, -512, 512, 0, 180);
+  left = map(left, -512, 512, 0, 180);
+
 
   // old algorithm
   // right = map(drive + rotate, -720, 720, 0, 180);
   // left = map(drive - rotate, -720, 720, 0, 180);
-  
-  rightServo.write(right);
-  leftServo.write(left);
+  if (right == 90) right = 92;
+  if (left == 90) left = 92;
+  rightServo.write((right + old_right)/2);
+  leftServo.write((left + old_left)/2);
+  old_left = (left + old_left)/2;
+  old_right = (right + old_right)/2;
+
   char buf[256];
   snprintf(buf, sizeof(buf) - 1,
           "X: %4li, Y: %4li => L: %4li, R: %4li",
