@@ -1,3 +1,4 @@
+// the loop function runs over and over again forever
 // 
 // Project for Stag Robotics
 // Purpose - use bluetooth gamepad controller to drive launcher robot
@@ -125,6 +126,7 @@ void processGamepad(ControllerPtr gamepad) {
   //  a(), b(), x(), y(), l1(), etc...
 
   if (gamepad->a()) {
+      Serial.print("A pressed.");
       digitalWrite(RELAY_PIN, HIGH);
       delay(4000);
       digitalWrite(RELAY_PIN, LOW);
@@ -167,6 +169,10 @@ void processGamepad(ControllerPtr gamepad) {
   // old algorithm
   // right = map(drive + rotate, -720, 720, 0, 180);
   // left = map(drive - rotate, -720, 720, 0, 180);
+
+  if (gamepad->r2() || gamepad->l2()) {
+    left = right;
+  }
   if (right == 90) right = 92;
   if (left == 90) left = 92;
   rightServo.write((right + old_right)/2);
@@ -178,7 +184,7 @@ void processGamepad(ControllerPtr gamepad) {
   snprintf(buf, sizeof(buf) - 1,
           "X: %4li, Y: %4li => L: %4li, R: %4li",
           rotate, drive, left, right);
-         Serial.println(buf); 
+  Serial.println(buf); 
 
   // Another way to query the buttons, is by calling buttons(), or
   // miscButtons() which return a bitmask.
@@ -207,9 +213,10 @@ void processGamepad(ControllerPtr gamepad) {
   //          gamepad->accelY(),     // Accelerometer Y
   //          gamepad->accelZ(),     // Accelerometer Z
   //          gamepad->battery()       // 0=Unknown, 1=empty, 255=full
+           
   // );
   // Serial.println(buf);
-
+  // Serial.print("="); 
   // You can query the axis and other properties as well. See
   // Controller.h For all the available functions.
 }
@@ -222,13 +229,15 @@ void loop() {
   // The controllers pointer (the ones received in the callbacks) gets updated
   // automatically.
   BP32.update();
-
+Serial.print("-"); 
   // It is safe to always do this before using the controller API.
   // This guarantees that the controller is valid and connected.
   for (int i = 0; i < BP32_MAX_CONTROLLERS; i++) {
     ControllerPtr myController = myControllers[i];
-    if (myController && myController->isConnected() && myController->isGamepad()) {
+    if (myController && myController->isConnected()) {
+      Serial.print("."); 
         processGamepad(myController);
+        Serial.println("+"); 
     }
   }
   delay(150);
