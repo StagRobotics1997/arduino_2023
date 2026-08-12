@@ -25,12 +25,16 @@ uint8_t old_left = 90;
 void setup() {
   // Initialize serial
   Serial.begin(9600);
-  // while (!Serial) {
-  //   // wait for serial port to connect.
-  //   // You don't have to do this in your game. This is only for debugging
-  //   // purposes, so that you can see the output in the serial console.
-  //   ;
-  // }
+  int retries = 0;
+  while (!Serial) {
+    delay(1000);
+    retries++;
+    if (retries > 5) break;
+    // wait for serial port to connect.
+    // You don't have to do this in your game. This is only for debugging
+    // purposes, so that you can see the output in the serial console.
+    ;
+  }
   
   pinMode(RELAY_PIN, OUTPUT);
 
