@@ -1,5 +1,5 @@
 // the loop function runs over and over again forever
-// 
+//
 // Project for Stag Robotics
 // Purpose - use bluetooth gamepad controller to drive launcher robot
 //
@@ -13,6 +13,7 @@
 
 #include <Bluepad32.h>
 #include <Servo.h>
+#include <Adafruit_NeoPixel.h>
 
 int RELAY_PIN = 4;
 Servo rightServo;
@@ -20,6 +21,22 @@ Servo leftServo;
 ControllerPtr myControllers[BP32_MAX_CONTROLLERS];
 uint8_t old_right = 90;
 uint8_t old_left = 90;
+
+// LED Definitions
+#define STRIPLENGTH_SHORT 20  // Popular NeoPixel ring size
+#define STRIPLENGTH_LONG 50
+#define ANTLER_LED_STRIP 20
+#define SHORT_STRIP_COUNT 4
+#define CHARGE_COLOR 0, 0, 255
+#define WHITE 150, 150, 150
+#define RED 255, 0, 0
+#define DIM_RED 10, 0, 0
+#define BLUE 0, 0, 255
+#define DELAYVAL 100  // Time (in milliseconds) to pause between pixels
+#define LED_PIN 3
+Adafruit_NeoPixel pixels(STRIPLENGTH_SHORT* SHORT_STRIP_COUNT + STRIPLENGTH_LONG + ANTLER_LED_STRIP, LED_PIN, NEO_GRB + NEO_KHZ800);
+
+int ledMode = 0;
 
 // Arduino setup function. Runs in CPU 1
 void setup() {
@@ -35,7 +52,7 @@ void setup() {
     // purposes, so that you can see the output in the serial console.
     ;
   }
-  
+
   pinMode(RELAY_PIN, OUTPUT);
 
   String fv = BP32.firmwareVersion();
@@ -69,8 +86,127 @@ void setup() {
   // set the controllers to idle (90)
   rightServo.write(91);
   leftServo.write(91);
+
+  pixels.begin();
 }
 
+void charge() {
+  pixels.clear();  // Set all pixel colors to 'off'
+
+  int diff = STRIPLENGTH_LONG - STRIPLENGTH_SHORT;
+  for (int i = 0; i < STRIPLENGTH_LONG; i++) {  // For each pixel...
+
+    pixels.setPixelColor(i, pixels.Color(CHARGE_COLOR));
+    if (i > STRIPLENGTH_LONG - STRIPLENGTH_SHORT - 1) {
+      for (int x = 0; x < SHORT_STRIP_COUNT; x++) {
+        pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff, pixels.Color(CHARGE_COLOR));
+      }
+    }
+
+    pixels.show();  // Send the updated pixel colors to the hardware.
+
+    delay(DELAYVAL);  // Pause before next pass through loop
+  }
+}
+
+
+void shoot() {
+  pixels.clear();  // Set all pixel colors to 'off'
+
+  // The first NeoPixel in a strand is #0, second is 1, all the way up
+  // to the count of pixels minus one
+  int diff = STRIPLENGTH_LONG - STRIPLENGTH_SHORT;
+  for (int i = 0; i < STRIPLENGTH_LONG; i++) {  // For each pixel...
+
+    // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
+    // Here we're using a moderately bright green color:
+    pixels.setPixelColor(i, pixels.Color(WHITE));
+    if (i > STRIPLENGTH_LONG - STRIPLENGTH_SHORT - 1) {
+      for (int x = 0; x < SHORT_STRIP_COUNT; x++) {
+        pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff, pixels.Color(WHITE));
+      }
+      // pixels.setPixelColor(i + STRIPLENGTH_LONG - diff, pixels.Color(150, 150, 150));
+      // pixels.setPixelColor(i + STRIPLENGTH_LONG + STRIPLENGTH_SHORT - diff, pixels.Color(150, 150, 150));
+    }
+  }
+  pixels.show();  // Send the updated pixel colors to the hardware.
+
+  for (int i = 0; i < STRIPLENGTH_LONG; i++) {  // For each pixel...
+
+    // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
+    // Here we're using a moderately bright green color:
+    pixels.setPixelColor(i, pixels.Color(RED));
+    if (i > 0) {
+      pixels.setPixelColor(i - 1, pixels.Color(DIM_RED));
+    }
+    if (i > STRIPLENGTH_LONG - STRIPLENGTH_SHORT - 1) {
+      for (int x = 0; x < SHORT_STRIP_COUNT; x++) {
+        pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff, pixels.Color(RED));
+        pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff - 1, pixels.Color(DIM_RED));
+      }
+    }
+
+    pixels.show();  // Send the updated pixel colors to the hardware.
+
+    delay(DELAYVAL);  // Pause before next pass through loop
+  }
+  for (int i = 0; i < ANTLER_LED_STRIP; i++) {  // For each pixel...
+    pixels.setPixelColor(i + STRIPLENGTH_LONG + STRIPLENGTH_SHORT * SHORT_STRIP_COUNT, pixels.Color(BLUE));
+  }
+  pixels.show();
+  delay(3000);  // Pause before next pass through loop
+  // Send the updated pixel colors to the hardware.
+}
+
+void idle() {
+  pixels.clear();  // Set all pixel colors to 'off'
+
+  int diff = STRIPLENGTH_LONG - STRIPLENGTH_SHORT;
+  for (int i = 0; i < STRIPLENGTH_LONG; i++) {  // For each pixel...
+
+    pixels.setPixelColor(i, pixels.Color(50, 50, 50, 50));
+    pixels.setPixelColor(i + 1, pixels.Color(255, 255, 255, 255));
+    pixels.setPixelColor(i + 2, pixels.Color(50, 50, 50, 50));
+    if (i > 0) {
+      pixels.setPixelColor(i - 1, pixels.Color(0, 0, 0, 0));
+    }
+    if (i > STRIPLENGTH_LONG - STRIPLENGTH_SHORT - 1) {
+      for (int x = 0; x < SHORT_STRIP_COUNT; x++) {
+        pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff - 1, pixels.Color(0, 0, 0, 0));
+        pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff, pixels.Color(50, 50, 50, 50));
+        pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff + 1, pixels.Color(255, 255, 255, 255));
+        pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff + 2, pixels.Color(50, 50, 50, 50));
+      }
+    }
+
+    pixels.show();  // Send the updated pixel colors to the hardware.
+
+    delay(10);  // Pause before next pass through loop
+  }
+  for (int i = STRIPLENGTH_LONG; i > 0; i--) {  // For each pixel...
+
+    pixels.setPixelColor(i, pixels.Color(50, 50, 50, 50));
+    pixels.setPixelColor(i - 1, pixels.Color(255, 255, 255, 255));
+    pixels.setPixelColor(i - 2, pixels.Color(50, 50, 50, 50));
+    if (i > 0) {
+      pixels.setPixelColor(i + 1, pixels.Color(0, 0, 0, 0));
+    }
+    if (i > STRIPLENGTH_LONG - STRIPLENGTH_SHORT - 1) {
+      for (int x = 0; x < SHORT_STRIP_COUNT; x++) {
+        pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff + 1, pixels.Color(0, 0, 0, 0));
+        pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff, pixels.Color(50, 50, 50, 50));
+        pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff - 1, pixels.Color(255, 255, 255, 255));
+        pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff - 2, pixels.Color(50, 50, 50, 50));
+      }
+    } else {
+      pixels.fill(0, STRIPLENGTH_LONG - 2, STRIPLENGTH_LONG + (STRIPLENGTH_SHORT * SHORT_STRIP_COUNT));
+    }
+
+    pixels.show();  // Send the updated pixel colors to the hardware.
+
+    delay(10);  // Pause before next pass through loop
+  }
+}
 // This callback gets called any time a new gamepad is connected.
 // Up to 4 gamepads can be connected at the same time.
 void onConnectedController(ControllerPtr ctl) {
@@ -98,7 +234,7 @@ void onConnectedController(ControllerPtr ctl) {
   }
   if (!foundEmptySlot) {
     Serial.println(
-        "CALLBACK: Controller connected, but could not found empty slot");
+      "CALLBACK: Controller connected, but could not found empty slot");
   }
 }
 
@@ -113,14 +249,14 @@ void onDisconnectedController(ControllerPtr ctl) {
       foundGamepad = true;
       // make sure servos are set to idle
       rightServo.write(90);
-      leftServo.write(90);    
+      leftServo.write(90);
       break;
     }
   }
 
   if (!foundGamepad) {
     Serial.println(
-        "CALLBACK: Controller disconnected, but not found in myControllers");
+      "CALLBACK: Controller disconnected, but not found in myControllers");
   }
 }
 
@@ -130,39 +266,44 @@ void processGamepad(ControllerPtr gamepad) {
   //  a(), b(), x(), y(), l1(), etc...
 
   if (gamepad->a()) {
-      Serial.print("A pressed.");
-      digitalWrite(RELAY_PIN, HIGH);
-      delay(4000);
-      digitalWrite(RELAY_PIN, LOW);
+    Serial.print("A pressed.");
+    shoot();
+    digitalWrite(RELAY_PIN, HIGH);
+    delay(4000);
+    digitalWrite(RELAY_PIN, LOW);
+    ledMode = 0;
   }
- 
+  if (gamepad->b()) {
+    Serial.print("B pressed.");
+    ledMode = 1;
+  }
   // set motor speeds - algorithm from - https://xiaoxiae.github.io/Robotics-Simplified-Website/drivetrain-control/arcade-drive/
   int32_t drive = -gamepad->axisY();  // gamepad returns -512 for this axis when pushed fully up
   int32_t rotate = gamepad->axisX();
   if (rotate > 0 && rotate < 50) rotate = 0;
   if (rotate < 0 && rotate > -50) rotate = 0;
-  rotate = rotate/2;
+  rotate = rotate / 2;
   int32_t maximum = max(abs(drive), abs(rotate));
   int32_t total = drive + rotate;
   int32_t difference = drive - rotate;
   int32_t right, left;
 
   // set speed according to the quadrant that the values are in
-  if (drive >= 0) { // forward
-    if (rotate >= 0) { // # I quadrant
-        left = maximum;
-        right = difference; 
-    } else { //  # II quadrant
-        left = total;
-        right = maximum;
+  if (drive >= 0) {     // forward
+    if (rotate >= 0) {  // # I quadrant
+      left = maximum;
+      right = difference;
+    } else {  //  # II quadrant
+      left = total;
+      right = maximum;
     }
-  } else { // backward
-    if (rotate >= 0) { // # IV quadrant
-        left = total;
-        right = -maximum;
-    } else { // # III quadrant
-        left = -maximum;
-        right = difference;
+  } else {              // backward
+    if (rotate >= 0) {  // # IV quadrant
+      left = total;
+      right = -maximum;
+    } else {  // # III quadrant
+      left = -maximum;
+      right = difference;
     }
   }
 
@@ -179,16 +320,16 @@ void processGamepad(ControllerPtr gamepad) {
   }
   if (right == 90) right = 92;
   if (left == 90) left = 92;
-  rightServo.write((right + old_right)/2);
-  leftServo.write((left + old_left)/2);
-  old_left = (left + old_left)/2;
-  old_right = (right + old_right)/2;
+  rightServo.write((right + old_right) / 2);
+  leftServo.write((left + old_left) / 2);
+  old_left = (left + old_left) / 2;
+  old_right = (right + old_right) / 2;
 
   char buf[256];
   snprintf(buf, sizeof(buf) - 1,
-          "X: %4li, Y: %4li => L: %4li, R: %4li",
-          rotate, drive, left, right);
-  Serial.println(buf); 
+           "X: %4li, Y: %4li => L: %4li, R: %4li",
+           rotate, drive, left, right);
+  Serial.println(buf);
 
   // Another way to query the buttons, is by calling buttons(), or
   // miscButtons() which return a bitmask.
@@ -217,10 +358,10 @@ void processGamepad(ControllerPtr gamepad) {
   //          gamepad->accelY(),     // Accelerometer Y
   //          gamepad->accelZ(),     // Accelerometer Z
   //          gamepad->battery()       // 0=Unknown, 1=empty, 255=full
-           
+
   // );
   // Serial.println(buf);
-  // Serial.print("="); 
+  // Serial.print("=");
   // You can query the axis and other properties as well. See
   // Controller.h For all the available functions.
 }
@@ -233,16 +374,19 @@ void loop() {
   // The controllers pointer (the ones received in the callbacks) gets updated
   // automatically.
   BP32.update();
-Serial.print("-"); 
+  Serial.print("-");
   // It is safe to always do this before using the controller API.
   // This guarantees that the controller is valid and connected.
   for (int i = 0; i < BP32_MAX_CONTROLLERS; i++) {
     ControllerPtr myController = myControllers[i];
     if (myController && myController->isConnected()) {
-      Serial.print("."); 
-        processGamepad(myController);
-        Serial.println("+"); 
+      Serial.print(".");
+      processGamepad(myController);
+      Serial.println("+");
     }
   }
   delay(150);
+  if (ledMode == 0) idle();
+  if (ledMode == 1) charge();
+  // if (ledMode == 2) shoot();
 }
