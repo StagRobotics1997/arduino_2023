@@ -25,10 +25,10 @@ uint8_t old_left = 90;
 // LED Definitions
 #define STRIPLENGTH_SHORT 25  // Popular NeoPixel ring size
 #define STRIPLENGTH_LONG 64
-#define ANTLER_LED_STRIP 20
+#define ANTLER_LED_STRIP 0
 #define SHORT_STRIP_COUNT 5
 #define CHARGE_COLOR 0, 0, 255
-#define WHITE 150, 150, 150
+#define WHITE 55, 55, 55
 #define RED 255, 0, 0
 #define DIM_RED 10, 0, 0
 #define BLUE 0, 0, 255
@@ -113,33 +113,20 @@ void charge() {
 void shoot() {
   pixels.clear();  // Set all pixel colors to 'off'
 
+  int diff = STRIPLENGTH_LONG - STRIPLENGTH_SHORT;
+
   // The first NeoPixel in a strand is #0, second is 1, all the way up
   // to the count of pixels minus one
-  int diff = STRIPLENGTH_LONG - STRIPLENGTH_SHORT;
-  for (int i = 0; i < STRIPLENGTH_LONG; i++) {  // For each pixel...
-
-    // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
-    // Here we're using a moderately bright green color:
-    pixels.setPixelColor(i, pixels.Color(WHITE));
-    if (i > STRIPLENGTH_LONG - STRIPLENGTH_SHORT - 1) {
-      for (int x = 0; x < SHORT_STRIP_COUNT; x++) {
-        pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff, pixels.Color(WHITE));
-      }
-      // pixels.setPixelColor(i + STRIPLENGTH_LONG - diff, pixels.Color(150, 150, 150));
-      // pixels.setPixelColor(i + STRIPLENGTH_LONG + STRIPLENGTH_SHORT - diff, pixels.Color(150, 150, 150));
-    }
-  }
+  pixels.fill(pixels.Color(WHITE)); //, 0 , STRIPLENGTH_LONG + (SHORT_STRIP_COUNT * STRIPLENGTH_SHORT) +  100);
   pixels.show();  // Send the updated pixel colors to the hardware.
 
   for (int i = 0; i < STRIPLENGTH_LONG; i++) {  // For each pixel...
 
-    // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
-    // Here we're using a moderately bright green color:
     pixels.setPixelColor(i, pixels.Color(RED));
     if (i > 0) {
       pixels.setPixelColor(i - 1, pixels.Color(DIM_RED));
     }
-    if (i > STRIPLENGTH_LONG - STRIPLENGTH_SHORT - 1) {
+    if (i > STRIPLENGTH_LONG - STRIPLENGTH_SHORT) {
       for (int x = 0; x < SHORT_STRIP_COUNT; x++) {
         pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff, pixels.Color(RED));
         pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff - 1, pixels.Color(DIM_RED));
@@ -162,7 +149,7 @@ void idle() {
   pixels.clear();  // Set all pixel colors to 'off'
 
   int diff = STRIPLENGTH_LONG - STRIPLENGTH_SHORT;
-  for (int i = 0; i < STRIPLENGTH_LONG; i++) {  // For each pixel...
+  for (int i = 0; i < STRIPLENGTH_LONG - 2; i++) {  // For each pixel...
 
     pixels.setPixelColor(i, pixels.Color(50, 50, 50, 50));
     pixels.setPixelColor(i + 1, pixels.Color(255, 255, 255, 255));
@@ -170,7 +157,7 @@ void idle() {
     if (i > 0) {
       pixels.setPixelColor(i - 1, pixels.Color(0, 0, 0, 0));
     }
-    if (i > STRIPLENGTH_LONG - STRIPLENGTH_SHORT - 1) {
+    if (i > (STRIPLENGTH_LONG - STRIPLENGTH_SHORT)-1) {
       for (int x = 0; x < SHORT_STRIP_COUNT; x++) {
         pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff - 1, pixels.Color(0, 0, 0, 0));
         pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff, pixels.Color(50, 50, 50, 50));
@@ -181,9 +168,9 @@ void idle() {
 
     pixels.show();  // Send the updated pixel colors to the hardware.
 
-    delay(10);  // Pause before next pass through loop
+    delay(50);  // Pause before next pass through loop
   }
-  for (int i = STRIPLENGTH_LONG; i > 0; i--) {  // For each pixel...
+  for (int i = STRIPLENGTH_LONG-1; i > 0; i--) {  // For each pixel...
 
     pixels.setPixelColor(i, pixels.Color(50, 50, 50, 50));
     pixels.setPixelColor(i - 1, pixels.Color(255, 255, 255, 255));
@@ -191,7 +178,7 @@ void idle() {
     if (i > 0) {
       pixels.setPixelColor(i + 1, pixels.Color(0, 0, 0, 0));
     }
-    if (i > STRIPLENGTH_LONG - STRIPLENGTH_SHORT - 1) {
+    if (i > STRIPLENGTH_LONG - STRIPLENGTH_SHORT + 2) {
       for (int x = 0; x < SHORT_STRIP_COUNT; x++) {
         pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff + 1, pixels.Color(0, 0, 0, 0));
         pixels.setPixelColor(i + STRIPLENGTH_LONG + (x * STRIPLENGTH_SHORT) - diff, pixels.Color(50, 50, 50, 50));
@@ -204,7 +191,7 @@ void idle() {
 
     pixels.show();  // Send the updated pixel colors to the hardware.
 
-    delay(10);  // Pause before next pass through loop
+    delay(50);  // Pause before next pass through loop
   }
 }
 // This callback gets called any time a new gamepad is connected.
@@ -386,7 +373,8 @@ void loop() {
     }
   }
   delay(150);
+  // shoot();
   if (ledMode == 0) idle();
   if (ledMode == 1) charge();
-  // if (ledMode == 2) shoot();
+  if (ledMode == 2) shoot();
 }
