@@ -34,6 +34,8 @@ uint8_t old_left = 90;
 #define BLUE 0, 0, 255
 #define DELAYVAL 100  // Time (in milliseconds) to pause between pixels
 #define LED_PIN 3
+#define LEDS_ACTIVE false
+
 Adafruit_NeoPixel pixels(STRIPLENGTH_SHORT* SHORT_STRIP_COUNT + STRIPLENGTH_LONG + ANTLER_LED_STRIP, LED_PIN, NEO_GRB + NEO_KHZ800);
 int ledMode = 0;
 
@@ -85,12 +87,16 @@ void setup() {
   // set the controllers to idle (90)
   leftServo.write(90);
   rightServo.write(90);
+  if (LEDS_ACTIVE) {
     pixels.begin();
   pixels.setBrightness(200);
   pixels.show();  // initialize all pixels to 'off'
+  }
 }
 
 void charge() {
+  if (!LEDS_ACTIVE) return;
+
   pixels.clear();  // Set all pixel colors to 'off'
 
   int diff = STRIPLENGTH_LONG - STRIPLENGTH_SHORT;
@@ -110,6 +116,7 @@ void charge() {
 }
 
 void shoot() {
+  if (!LEDS_ACTIVE) return;
   pixels.clear();  // Set all pixel colors to 'off'
 
   int diff = STRIPLENGTH_LONG - STRIPLENGTH_SHORT;
@@ -145,6 +152,7 @@ void shoot() {
 }
 
 void idle() {
+  if (!LEDS_ACTIVE) return;
   pixels.clear();  // Set all pixel colors to 'off'
 
   int diff = STRIPLENGTH_LONG - STRIPLENGTH_SHORT;
